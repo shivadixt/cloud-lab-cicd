@@ -2,29 +2,50 @@
 pipeline {
     agent any
 
+    options {
+        skipDefaultCheckout(true)
+    }
+
     triggers {
         pollSCM('H/2 * * * *')
     }
 
     stages {
 
-        stage('Checkout') {
+        stage('Checkout from GitHub') {
             steps {
                 checkout scm
-                echo 'Source code fetched successfully!'
+                echo 'Code fetched successfully!'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t cloud-lab-site:latest .'
+                sh '''
+                    docker build \
+                    -t shivadixit/cloud-lab-cicd:${BUILD_NUMBER} \
+                    -t shivadixit/cloud-lab-cicd:latest .
+                '''
             }
         }
 
-        stage('Verify Docker Image') {
+        stage('Push to Docker Hub') {
             steps {
-                sh 'docker images cloud-lab-site'
+                sh '''
+                    docker push shivadixit/cloud-lab-cicd:${BUILD_NUMBER}
+                    docker push shivadixit/cloud-lab-cicd:latest
+                '''
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'Image successfully pushed to Docker Hub!'
+        }
+
+        failure {
+            echo 'Pipeline failed. Check Console Output.'
         }
     }
 }
