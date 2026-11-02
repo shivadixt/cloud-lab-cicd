@@ -37,11 +37,28 @@ pipeline {
                 '''
             }
         }
+
+        stage('Deploy Locally') {
+            steps {
+                sh '''
+                    docker pull shivadixit/cloud-lab-cicd:${BUILD_NUMBER}
+
+                    docker rm -f cloud-lab-container || true
+
+                    docker run -d \
+                    --name cloud-lab-container \
+                    --restart unless-stopped \
+                    -p 8081:80 \
+                    shivadixit/cloud-lab-cicd:${BUILD_NUMBER}
+                '''
+            }
+        }
     }
 
     post {
         success {
-            echo 'Image successfully pushed to Docker Hub!'
+            echo 'CI/CD Pipeline completed successfully!'
+            echo 'Application: http://localhost:8081'
         }
 
         failure {
